@@ -15,7 +15,7 @@ from util.loss import LabelSmoothingCrossEntropy
 
 from tensorboardX import SummaryWriter
 
-writer = SummaryWriter()
+# writer = SummaryWriter("runs/ex1")
 
 
 def adjust_lr(optimizer, epoch, warm_up=5, lr=5e-4, total_epoch=200):
@@ -47,8 +47,9 @@ def train(model, epoch, train_loader, optimizer, criterion, device, print_freq=1
         avg_acc = total_acc * 100.0 / n
 
         if i % print_freq == 0:
-            writer.add_scalar('NLL loss with label smoothing', loss.item(), global_step=i + epoch * 391 + 1)
-            writer.add_scalar('Train dataset top-1', avg_acc, global_step=i + epoch * 391 + 1)
+            print("epoch %d iter %d loss %f avg_acc %f" % (epoch + 1, i + 1, loss.item(), avg_acc))
+            # writer.add_scalar('scalar/NLL loss with label smoothing', loss.item(), global_step=i + epoch * 391 + 1)
+            # writer.add_scalar('scalar/Train dataset top-1', avg_acc, global_step=i + epoch * 391 + 1)
 
 
 def validate(model, epoch, val_loader, criterion, device, print_freq=200):
@@ -74,7 +75,7 @@ def validate(model, epoch, val_loader, criterion, device, print_freq=200):
             print("validate epoch %d iter %d top1 %f" % (epoch + 1, i + 1, avg_acc))
 
     print("validate ends avg_acc %f" % avg_acc)
-    writer.add_scalar('Valid dataset top-1', avg_acc, global_step=epoch + 1)
+    # writer.add_scalar('Valid dataset top-1', avg_acc, global_step=epoch + 1)
 
     model.train()
 
@@ -93,7 +94,7 @@ def main():
     criterion = LabelSmoothingCrossEntropy()
     optimizer = AdamW(model.parameters(), lr=5e-4, betas=(0.9, 0.999), weight_decay=3e-2)
 
-    train_transform = transforms.Compose([CIFAR10Policy,
+    train_transform = transforms.Compose([CIFAR10Policy(),
                                           transforms.RandomHorizontalFlip(),
                                           transforms.ToTensor(),
                                           transforms.Normalize(mean=mean, std=std)
@@ -119,5 +120,5 @@ def main():
     print("task ends")
 
 
-if __name__ == 'main':
+if __name__ == '__main__':
     main()

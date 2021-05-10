@@ -4,7 +4,7 @@ from models.transformer import TransformEncoder
 
 
 class Tokenization(nn.Module):
-    def __init__(self, conv_layers_num=1, input_channel=3, embed_channel=64, out_channel=256, kernel_size=3, stride=1, padding=1):
+    def __init__(self, conv_layers_num=2, input_channel=3, embed_channel=64, out_channel=128, kernel_size=3, stride=1, padding=1):
         super().__init__()
         self.input_channel = input_channel
         self.output_channel = out_channel
@@ -35,18 +35,18 @@ class Tokenization(nn.Module):
 
     def forward(self, x):
         x = self.conv_blocks(x)
-        x = self.flatten(x).transpose(2, 3)
+        x = self.flatten(x).transpose(1, 2)
         return x
 
 
 class TransformerClassifier(nn.Module):
-    def __init__(self, encoder_num=7, embed_dim=256, class_num=10):
+    def __init__(self, encoder_num=2, embed_dim=128, class_num=10):
         super().__init__()
         self.encoders = nn.Sequential(
             *[TransformEncoder() for i in range(encoder_num)]
         )
         self.sequence_pool = nn.Linear(embed_dim, 1)
-        self.soft = nn.Softmax()
+        self.soft = nn.Softmax(dim=-1)
         self.mlp_layer = nn.Linear(embed_dim, class_num)
         self.apply(self.init_weight)
 
@@ -69,7 +69,7 @@ class TransformerClassifier(nn.Module):
 
 
 class CCT(nn.Module):
-    def __init__(self, embed_dim=256, conv_layers_num=1, kernel_size=3, stride=2, padding=1):
+    def __init__(self, embed_dim=128, conv_layers_num=1, kernel_size=3, stride=2, padding=1):
         super().__init__()
         self.tokenization = Tokenization()
         self.position = nn.Parameter(torch.zeros(1, self.tokenization.get_sequence_len(), embed_dim))

@@ -3,18 +3,19 @@ import torch.nn as nn
 
 
 class Attention(nn.Module):
-    def __init__(self, num_heads=4, embed_dim=256, attention_dropout=0.1, fc_dropout=0.1):
+    def __init__(self, num_heads=2, embed_dim=128, attention_dropout=0.1, fc_dropout=0.1):
         super(Attention, self).__init__()
 
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         self.sqrt_d = embed_dim ** -0.5
+        self.single_dim = int(self.embed_dim / self.num_heads)
 
         self.linear_q = nn.Linear(embed_dim, embed_dim)
         self.linear_k = nn.Linear(embed_dim, embed_dim)
         self.linear_v = nn.Linear(embed_dim, embed_dim)
 
-        self.soft_max = nn.Softmax()
+        self.soft_max = nn.Softmax(dim=-1)
         self.attn_dropout = nn.Dropout(attention_dropout)
 
         self.fc = nn.Linear(embed_dim, embed_dim)
@@ -23,14 +24,14 @@ class Attention(nn.Module):
     def forward(self, x):  # b, n, d -> b, n, head, d/head -> b, head, n, d/head
         batch = x.size(0)
         n = x.size(1)
-        q = self.linear_q(x).reshape(batch, n, self.num_heads, self.embed_dim / self.num_heads).transpose(1, 2)
-        k = self.linear_k(x).reshape(batch, n, self.num_heads, self.embed_dim / self.num_heads).transpose(1, 2)
-        v = self.linear_v(x).reshape(batch, n, self.num_heads, self.embed_dim / self.num_heads).transpose(1, 2)
+        q = self.linear_q(x).reshape(batch, n, self.num_heads, self.single_dim).transpose(1, 2)
+        k = self.linear_k(x).reshape(batch, n, self.num_heads, self.single_dim).transpose(1, 2)
+        v = self.linear_v(x).reshape(batch, n, self.num_heads, self.single_dim).transpose(1, 2)
 
         # score
-        attn = self.soft_max(q @ k.transpose(2, 3) / self.sqrt_d, dim=-1)
+        attn = self.soft_max(q @ k.transpose(2, 3) / self.sqrt_d)
         # 对score进行softmax
-        attn = self.dropout(attn)
+        attn = self.attn_dropout(attn)
         res = (attn @ v).transpose(1, 2).contiguous().reshape(batch, n, self.embed_dim)
         # 综合multi-head信息
         res = self.fc_dropout(self.fc(res))
@@ -38,7 +39,7 @@ class Attention(nn.Module):
 
 
 class TransformEncoder(nn.Module):
-    def __init__(self, embed_dim=256, ffn_dim=512,  dropout=0.1,
+    def __init__(self, embed_dim=128, ffn_dim=256,  dropout=0.1,
                  attention_dropout=0.1, drop_path_rate=0.1):  # input: b, n, d
         super(TransformEncoder, self).__init__()
         self.pre_norm = nn.LayerNorm(embed_dim)
