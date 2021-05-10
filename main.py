@@ -83,7 +83,7 @@ def validate(model, epoch, val_loader, criterion, device, print_freq=200):
 def accuracy(pred, target):
     _, res = F.softmax(pred, dim=-1).topk(1, 1, True, True)
     res = res.squeeze(-1)
-    acc = (res == target).numpy().astype(np.uint8).sum()
+    acc = (res == target).cpu().numpy().astype(np.uint8).sum()
     return acc
 
 
@@ -104,7 +104,7 @@ def main():
     train_dataset = torchvision.datasets.CIFAR10(root='cifar10', train=True, download=True, transform=train_transform)
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4)
     val_dataset = torchvision.datasets.CIFAR10(root='cifar10', train=False, download=False, transform=valid_transform)
-    val_loader = DataLoader(val_dataset)
+    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4)
 
     total_epoch = 200
 
@@ -116,7 +116,7 @@ def main():
         time_after = time.time()
         print("epoch %d ends, time: %f minutes" % (epoch + 1, (time_after - time_before) / 60.0))
         validate(model, epoch, val_loader, criterion, device)
-
+    torch.save(model.state_dict(), 'checkpoints')
     print("task ends")
 
 
