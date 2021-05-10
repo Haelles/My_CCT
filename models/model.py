@@ -81,7 +81,9 @@ class CCT(nn.Module):
 
     def forward(self, x):
         x = self.tokenization(x)
-        x += self.position
-        x = self.layer_norm(x)  # TODO need to check
+        x += self.position  # b, n, d
+        # x = self.layer_norm(x)
+        # TODO: need to check
+        # TODO: needing a dropout?
         x = self.classifier(x)  # b, class_num
         return x
