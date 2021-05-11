@@ -91,6 +91,9 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     mean, std = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]
     model = CCT().to(device)
+    # from torchsummary import summary
+    # summary(model, input_size=(3, 32, 32), batch_size=-1)
+    # return
     criterion = LabelSmoothingCrossEntropy()
     optimizer = AdamW(model.parameters(), lr=5e-4, betas=(0.9, 0.999), weight_decay=3e-2)
 

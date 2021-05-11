@@ -40,14 +40,16 @@ class Tokenization(nn.Module):
 
 
 class TransformerClassifier(nn.Module):
-    def __init__(self, encoder_num=2, embed_dim=128, class_num=10):
+    def __init__(self, encoder_num=2, embed_dim=128, class_num=10, stochastic_depth_rate=0.1, num_layers=2):
         super().__init__()
+        dpr = [x.item() for x in torch.linspace(0, stochastic_depth_rate, num_layers)]  # 根据author code添加上
         self.encoders = nn.Sequential(
-            *[TransformEncoder() for i in range(encoder_num)]
+            *[TransformEncoder(drop_path_rate=dpr[i]) for i in range(encoder_num)]
         )
         self.sequence_pool = nn.Linear(embed_dim, 1)
         self.soft = nn.Softmax(dim=-1)
         self.mlp_layer = nn.Linear(embed_dim, class_num)
+        self.layer_norm = nn.LayerNorm(embed_dim)  # 根据author code添加上
         self.apply(self.init_weight)
 
     @staticmethod
@@ -62,6 +64,7 @@ class TransformerClassifier(nn.Module):
 
     def forward(self, x):
         x = self.encoders(x)  # b, n, d
+        x = self.layer_norm(x)  # 根据author code添加上
         temp = self.soft((self.sequence_pool(x)).transpose(-2, -1))  # -> b, 1, n
         x = (temp @ x).squeeze(1)  # b, 1, d -> b, d
         x = self.mlp_layer(x)
@@ -69,7 +72,7 @@ class TransformerClassifier(nn.Module):
 
 
 class CCT(nn.Module):
-    def __init__(self, embed_dim=128, conv_layers_num=1, kernel_size=3, stride=2, padding=1):
+    def __init__(self, embed_dim=128, conv_layers_num=1, kernel_size=3, stride=2, padding=1, dropout_rate=0.1):
         super().__init__()
         self.tokenization = Tokenization()
         self.position = nn.Parameter(torch.zeros(1, self.tokenization.get_sequence_len(), embed_dim))
@@ -77,13 +80,12 @@ class CCT(nn.Module):
         self.layer_norm = nn.LayerNorm(embed_dim)
         nn.init.constant_(self.layer_norm.bias, 0)
         nn.init.constant_(self.layer_norm.weight, 1.0)
+        self.dropout = nn.Dropout(p=dropout_rate)
         self.classifier = TransformerClassifier()
 
     def forward(self, x):
         x = self.tokenization(x)
         x += self.position  # b, n, d
-        # x = self.layer_norm(x)
-        # TODO: need to check
-        # TODO: needing a dropout?
+        x = self.dropout(x)  # 根据author code添加上
         x = self.classifier(x)  # b, class_num
         return x

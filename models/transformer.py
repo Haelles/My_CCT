@@ -11,9 +11,9 @@ class Attention(nn.Module):
         self.sqrt_d = embed_dim ** -0.5
         self.single_dim = int(self.embed_dim / self.num_heads)
 
-        self.linear_q = nn.Linear(embed_dim, embed_dim)
-        self.linear_k = nn.Linear(embed_dim, embed_dim)
-        self.linear_v = nn.Linear(embed_dim, embed_dim)
+        self.linear_q = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.linear_k = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.linear_v = nn.Linear(embed_dim, embed_dim, bias=False)
 
         self.soft_max = nn.Softmax(dim=-1)
         self.attn_dropout = nn.Dropout(attention_dropout)
@@ -39,18 +39,18 @@ class Attention(nn.Module):
 
 
 class TransformEncoder(nn.Module):
-    def __init__(self, embed_dim=128, ffn_dim=256,  dropout=0.1,
+    def __init__(self, embed_dim=128, ffn_dim=128,  dropout=0.1,
                  attention_dropout=0.1, drop_path_rate=0.1):  # input: b, n, d
         super(TransformEncoder, self).__init__()
         self.pre_norm = nn.LayerNorm(embed_dim)
-        self.attn = Attention()
+        self.attn = Attention(attention_dropout=attention_dropout, fc_dropout=dropout)
         self.norm_layer1 = nn.LayerNorm(embed_dim)
 
         self.linear1 = nn.Linear(embed_dim, ffn_dim)
         self.activate = nn.GELU()
-        self.dropout1 = nn.Dropout()
+        self.dropout1 = nn.Dropout(dropout)  # 根据author code添加上
         self.linear2 = nn.Linear(ffn_dim, embed_dim)
-        self.dropout2 = nn.Dropout()
+        self.dropout2 = nn.Dropout(dropout)  # 根据author code添加上
 
         self.drop_path = DropPath(drop_path_rate) if drop_path_rate > 0 else nn.Identity()
 
