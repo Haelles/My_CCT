@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class Attention(nn.Module):
-    def __init__(self, num_heads=2, embed_dim=128, attention_dropout=0.1, fc_dropout=0.1):
+    def __init__(self, num_heads=4, embed_dim=256, attention_dropout=0.1, fc_dropout=0.1):
         super(Attention, self).__init__()
 
         self.num_heads = num_heads
@@ -39,7 +39,7 @@ class Attention(nn.Module):
 
 
 class TransformEncoder(nn.Module):
-    def __init__(self, embed_dim=128, ffn_dim=128,  dropout=0.1,
+    def __init__(self, embed_dim=256, ffn_dim=512,  dropout=0.1,
                  attention_dropout=0.1, drop_path_rate=0.1):  # input: b, n, d
         super(TransformEncoder, self).__init__()
         self.pre_norm = nn.LayerNorm(embed_dim)
