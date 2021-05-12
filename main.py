@@ -36,9 +36,9 @@ def train(model, epoch, train_loader, optimizer, criterion, device, print_freq=1
         target = target.to(device)
         n += images.size(0)  # 这个epoch下已经读取了多少图片
 
-        optimizer.zero_grad()
         pred = model(images)  # [batch, 10]
         loss = criterion(pred, target)
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -91,10 +91,10 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     mean, std = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]
     model = CCT().to(device)
-    from torchsummary import summary
-    summary(model, input_size=(3, 32, 32), batch_size=-1)
-    return
-    criterion = LabelSmoothingCrossEntropy()
+    # from torchsummary import summary
+    # summary(model, input_size=(3, 32, 32), batch_size=-1)
+    # return
+    criterion = LabelSmoothingCrossEntropy().to(device)  # debug
     optimizer = AdamW(model.parameters(), lr=5e-4, betas=(0.9, 0.999), weight_decay=3e-2)
 
     train_transform = transforms.Compose([CIFAR10Policy(),
@@ -119,7 +119,7 @@ def main():
         time_after = time.time()
         print("epoch %d ends, time: %f minutes" % (epoch + 1, (time_after - time_before) / 60.0))
         validate(model, epoch, val_loader, criterion, device)
-    torch.save(model.state_dict(), 'checkpoints')
+    torch.save(model.state_dict(), 'checkpoints.pth')
     print("task ends")
 
 
