@@ -81,10 +81,11 @@ def validate(model, epoch, val_loader, criterion, device, print_freq=200):
 
 
 def accuracy(pred, target):
-    _, res = F.softmax(pred, dim=-1).topk(1, 1, True, True)
-    res = res.squeeze(-1)
-    acc = (res == target).cpu().numpy().astype(np.uint8).sum()
-    return acc
+    with torch.no_grad():
+        _, res = F.softmax(pred, dim=-1).topk(1, 1, True, True)
+        res = res.squeeze(-1)
+        acc = (res == target).cpu().numpy().astype(np.uint8).sum()
+        return acc
 
 
 def main():
